@@ -1002,7 +1002,10 @@ function setGender(g) {
   const mv = document.getElementById('avatar-img');
   const newSrc = GENDER_MODELS[g] || 'avatar.glb';
   if (mv.getAttribute('src') !== newSrc) {
+    mv.style.opacity = '0';
+    mv.style.transition = 'opacity 0.3s ease';
     mv.setAttribute('src', newSrc);
+    mv.addEventListener('load', () => { mv.style.opacity = '1'; }, { once: true });
   }
   leftSel.images = g === 'man' ? MAN_LEFT_IMGS : WOMAN_LEFT_IMGS;
   leftSel._render();
