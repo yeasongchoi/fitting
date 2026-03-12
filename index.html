@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitting</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100vw; height: 100vh; overflow: hidden;
+}
+
+/* ── Page-entry animations ─────────────────────────────────────── */
+@keyframes _enter-up {
+  from { opacity: 0; transform: translateY(28px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+@keyframes _enter-left {
+  from { opacity: 0; transform: translateX(-36px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0)     scale(1);    }
+}
+@keyframes _enter-right {
+  from { opacity: 0; transform: translateX(36px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0)    scale(1);    }
+}
+@keyframes _fade-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* Triggered via JS: class added → animation plays → stays */
+.center-panel.entering  { animation: _enter-up    0.85s cubic-bezier(0.34,1.42,0.64,1) 0.05s both; }
+#left-selector.entering  { animation: _enter-left  0.90s cubic-bezier(0.34,1.38,0.64,1) 0.15s both; }
+#right-selector.entering { animation: _enter-right 0.90s cubic-bezier(0.34,1.38,0.64,1) 0.20s both; }
+.settings-btn.entering   { animation: _fade-in     0.70s cubic-bezier(0.34,1.56,0.64,1) 0.30s both; }
+.next-btn.entering       { animation: _fade-in     0.70s cubic-bezier(0.34,1.56,0.64,1) 0.35s both; }
+#bg {
+  position: fixed; inset: 0; z-index: 0;
+  background: url('backgrounds/background.jpg') center center / cover no-repeat;
+  transition: opacity 0.75s cubic-bezier(0.23,1,0.32,1);
+}
+#app { z-index: 1; }
+#app {
+  position: absolute; width: 1920px; height: 1080px;
+  background: transparent;
+  overflow: hidden; transform-origin: top left;
+}
+
+/* TITLE */
+.title {
+  position: absolute; top: 35px; left: 826px;
+  font-family: 'Poppins', sans-serif; font-size: 20px;
+  font-weight: 500; color: #38383D; white-space: nowrap;
+}
+
+/* CENTER PANEL */
+.center-panel {
+  position: absolute; top: 109px; left: 695px;
+  width: 530px; height: 871px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 339px; overflow: hidden;
+  display: flex; flex-direction: column;
+  align-items: center; padding: 40px 0; gap: 40px;
+}
+
+/* SEGMENT CONTROL */
+.segment-control {
+  width: 200px; height: 28px; background: transparent;
+  display: flex; flex-shrink: 0; gap: 8px;
+}
+.seg-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.25s ease;
+}
+.seg-btn.active { border-bottom-color: #fff; }
+.seg-btn span {
+  font-family: 'Poppins', sans-serif; font-size: 14px;
+  font-weight: 500; color: rgba(255,255,255,0.5);
+  transition: color 0.25s ease; user-select: none;
+}
+.seg-btn.active span { color: #fff; }
+
+/* AVATAR */
+.avatar {
+  width: 213px; height: 701px; flex-shrink: 0;
+  --progress-bar-height: 0px;
+  background: transparent;
+}
+
+/* CHANGE BG BUTTON */
+.settings-btn {
+  position: absolute; top: 50px; left: 1826px;
+  width: 44px; height: 44px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%; display: flex;
+  align-items: center; justify-content: center;
+  cursor: pointer; user-select: none;
+  transition: background 0.25s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+.settings-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: rotate(180deg);
+}
+.settings-btn svg { pointer-events: none; }
+
+/* NEXT BUTTON */
+.next-btn {
+  position: absolute; top: 1000px; left: 900px;
+  width: 120px; height: 44px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 22px; display: flex;
+  align-items: center; justify-content: center;
+  cursor: pointer; user-select: none;
+  transition: background 0.25s ease;
+}
+.next-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.next-btn span {
+  font-family: 'Poppins', sans-serif; font-size: 16px;
+  font-weight: 500; color: #fff;
+}
+
+/* SELECTOR PANELS */
+.selector-panel {
+  position: absolute; top: 0; height: 1080px; width: 426px;
+  transform-origin: center center;
+  /* spring cubic-bezier: 한 번 살짝 오버슈트하고 부드럽게 안착 */
+  transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1),
+              filter    0.45s cubic-bezier(0.23, 1,    0.32, 1);
+  will-change: transform, filter;
+}
+.selector-panel.left  { left: 406px; }
+.selector-panel.right { left: 1088px; }
+#left-selector:hover,
+.selector-panel.left:hover {
+  transform: translateX(10px) scale(1.035);
+  filter: brightness(1.12) drop-shadow(0 0 18px rgba(255,255,255,0.25));
+}
+#right-selector:hover,
+.selector-panel.right:hover {
+  transform: translateX(-10px) scale(1.035);
+  filter: brightness(1.12) drop-shadow(0 0 18px rgba(255,255,255,0.25));
+}
+
+.arc-svg { position: absolute; pointer-events: none; overflow: visible; }
+
+/* THUMB ITEMS */
+.thumb-item {
+  position: absolute; border-radius: 50%; overflow: visible;
+  cursor: pointer; z-index: 10;
+}
+.thumb-scale {
+  width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+  transform: scale(1); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  will-change: transform;
+}
+.thumb-item:not([data-dist="0"]):hover .thumb-scale { transform: scale(1.10); }
+.thumb-item img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+  display: block; pointer-events: none; user-select: none; -webkit-user-drag: none;
+}
+.thumb-item { box-shadow: none; }
+.thumb-item[data-dist="0"] {
+  box-shadow: 0 0 0 4px rgba(255,255,255,1), 0 0 25px 12px rgba(255,255,255,0.75),
+              0 0 60px 28px rgba(255,255,255,0.4), 0 0 100px 50px rgba(255,255,255,0.15);
+}
+.thumb-item[data-dist="1"] {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.65), 0 0 15px 6px rgba(255,255,255,0.35),
+              0 0 40px 14px rgba(255,255,255,0.12);
+}
+.thumb-item[data-dist="2"] { box-shadow: 0 0 0 1px rgba(255,255,255,0.35), 0 0 10px 4px rgba(255,255,255,0.15); }
+.thumb-item[data-dist="3"] { box-shadow: 0 0 8px 2px rgba(255,255,255,0.08); }
+.thumb-item.off { opacity: 0 !important; pointer-events: none; }
+.wheel-zone { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
+
+/* ── Screen system ──────────────────────────────────────────────── */
+#app[data-screen="1"] .s2 { display: none !important; }
+#app[data-screen="2"] .s1 { display: none !important; }
+
+/* ── Arc Slider (screen 2) ──────────────────────────────────────── */
+.arc-slider-svg {
+  position: absolute; pointer-events: none; overflow: visible;
+}
+.sl-zone {
+  position: absolute; inset: 0; z-index: 20; cursor: ns-resize;
+}
+
+/* Value display panels */
+.sl-info {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  text-align: center; color: white; pointer-events: none;
+}
+.sl-info-left  { right: 274px; }
+.sl-info-right { left:  238px; }
+.sl-name {
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 500;
+  letter-spacing: 0.18em; opacity: 0.55; text-transform: uppercase; margin-bottom: 10px;
+}
+.sl-num {
+  font-family: 'Poppins', sans-serif; font-size: 72px; font-weight: 600;
+  line-height: 1; margin-bottom: 6px;
+}
+.sl-unit {
+  font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 400; opacity: 0.65;
+}
+/* Min/max tick labels on arc ends */
+.sl-range {
+  position: absolute; font-family: 'Poppins', sans-serif;
+  font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.4);
+  pointer-events: none;
+}
+
+/* ── Back / Confirm buttons (screen 2) ─────────────────────────── */
+.back-btn {
+  position: absolute; top: 1000px; left: 752px;
+  width: 120px; height: 44px;
+  background: rgba(255,255,255,0.18); backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 22px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; user-select: none; transition: background 0.25s ease;
+}
+.back-btn:hover { background: rgba(255,255,255,0.28); }
+.back-btn span  { font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 500; color: #fff; }
+.confirm-btn {
+  position: absolute; top: 1000px; left: 1048px;
+  width: 120px; height: 44px;
+  background: rgba(255,255,255,0.28); backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 22px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; user-select: none; transition: background 0.25s ease;
+}
+.confirm-btn:hover { background: rgba(255,255,255,0.40); }
+.confirm-btn span  { font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 500; color: #fff; }
+
+.back-btn.entering    { animation: _fade-in 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both; }
+.confirm-btn.entering { animation: _fade-in 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.35s both; }
+
+/* ── BG Dropdown ─────────────────────────────────────────────────── */
+.bg-dropdown {
+  position: absolute; top: 104px; left: 1594px; width: 232px;
+  background: rgba(12,12,18,0.82); backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px); border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 18px; padding: 8px 0; z-index: 100;
+  opacity: 0; pointer-events: none;
+  transform: translateY(-8px) scale(0.97);
+  transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+.bg-dropdown.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+.bg-dd-item {
+  display: flex; align-items: center; gap: 12px; padding: 11px 16px;
+  cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 13px;
+  font-weight: 500; color: rgba(255,255,255,0.85);
+  border-radius: 10px; margin: 2px 6px; transition: background 0.15s ease; user-select: none;
+}
+.bg-dd-item:hover { background: rgba(255,255,255,0.10); }
+.bg-dd-item svg { flex-shrink: 0; opacity: 0.72; }
+.bg-dd-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 14px; }
+
+/* ── Modal overlay ───────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.54); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.24s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-box {
+  background: rgba(12,12,20,0.90); backdrop-filter: blur(36px);
+  -webkit-backdrop-filter: blur(36px); border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 26px; padding: 32px 32px 28px; width: 496px;
+  max-height: 88vh; overflow-y: auto;
+  transform: translateY(22px) scale(0.97);
+  transition: transform 0.28s cubic-bezier(0.34,1.42,0.64,1);
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.14) transparent;
+}
+.modal-overlay.open .modal-box { transform: translateY(0) scale(1); }
+.modal-box::-webkit-scrollbar { width: 3px; }
+.modal-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+.modal-title {
+  font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 600; color: #fff;
+  margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between;
+}
+.modal-close {
+  width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; cursor: pointer; background: rgba(255,255,255,0.09);
+  transition: background 0.15s ease; flex-shrink: 0;
+}
+.modal-close:hover { background: rgba(255,255,255,0.18); }
+
+/* ── Upload zone ─────────────────────────────────────────────────── */
+.upload-zone {
+  border: 2px dashed rgba(255,255,255,0.20); border-radius: 16px;
+  padding: 42px 24px; text-align: center; cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: rgba(255,255,255,0.52); background: rgba(255,255,255,0.05);
+}
+.upload-zone p {
+  font-family: 'Poppins', sans-serif; font-size: 13px;
+  color: rgba(255,255,255,0.40); margin-top: 10px; line-height: 1.65;
+}
+.upload-zone strong { color: rgba(255,255,255,0.78); }
+#upload-preview {
+  width: 100%; height: 188px; object-fit: cover;
+  border-radius: 13px; margin-top: 14px; display: none;
+}
+
+/* ── AI modal sections ───────────────────────────────────────────── */
+.modal-section { margin-top: 20px; }
+.modal-label {
+  font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.14em; color: rgba(255,255,255,0.38);
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.modal-textarea {
+  width: 100%; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.11); border-radius: 13px;
+  padding: 12px 15px; font-family: 'Poppins', sans-serif; font-size: 13px;
+  color: #fff; resize: none; outline: none; line-height: 1.6;
+  transition: border-color 0.18s ease; box-sizing: border-box;
+}
+.modal-textarea::placeholder { color: rgba(255,255,255,0.22); }
+.modal-textarea:focus { border-color: rgba(255,255,255,0.30); }
+.chip-group { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip {
+  padding: 6px 14px; border-radius: 20px; cursor: pointer;
+  font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 500;
+  color: rgba(255,255,255,0.58); background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.10); transition: all 0.15s ease; user-select: none;
+}
+.chip:hover { background: rgba(255,255,255,0.13); color: rgba(255,255,255,0.88); }
+.chip.active { background: rgba(255,255,255,0.20); border-color: rgba(255,255,255,0.46); color: #fff; }
+
+/* ── Color pickers ───────────────────────────────────────────────── */
+.color-pickers { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.color-slot {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.22); overflow: hidden;
+  cursor: pointer; position: relative; transition: border-color 0.16s ease; flex-shrink: 0;
+}
+.color-slot:hover { border-color: rgba(255,255,255,0.55); }
+.color-slot input[type="color"] {
+  position: absolute; inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px);
+  opacity: 0; cursor: pointer;
+}
+.color-slot-bg { width: 100%; height: 100%; pointer-events: none; }
+.color-add {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.07); border: 2px dashed rgba(255,255,255,0.20);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s ease; flex-shrink: 0;
+}
+.color-add:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.48); }
+.color-hint {
+  font-family: 'Poppins', sans-serif; font-size: 11px;
+  color: rgba(255,255,255,0.30); margin-left: 2px;
+}
+
+/* ── Modal buttons ───────────────────────────────────────────────── */
+.modal-btn {
+  width: 100%; height: 46px; border-radius: 23px;
+  background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.30);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; margin-top: 22px;
+  font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600;
+  color: #fff; transition: background 0.18s ease; user-select: none;
+}
+.modal-btn:hover { background: rgba(255,255,255,0.28); }
+.modal-btn:active { background: rgba(255,255,255,0.14); }
+.modal-btn.loading { opacity: 0.5; pointer-events: none; }
+.modal-btn.secondary {
+  background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); margin-top: 10px;
+}
+.modal-btn.secondary:hover { background: rgba(255,255,255,0.12); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { animation: spin 0.85s linear infinite; display: inline-block; }
+
+/* ── AI preview ──────────────────────────────────────────────────── */
+#ai-preview-wrap {
+  width: 100%; height: 168px; border-radius: 13px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  display: none; align-items: center; justify-content: center;
+  overflow: hidden; margin-top: 18px;
+}
+#ai-preview-wrap.show { display: flex; }
+#ai-preview-img { width: 100%; height: 100%; object-fit: cover; }
+#ai-preview-msg {
+  font-family: 'Poppins', sans-serif; font-size: 12px;
+  color: rgba(255,255,255,0.28); text-align: center; padding: 20px;
+}
+
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div id="app" data-screen="1">
+
+  <!-- Center panel -->
+  <div class="center-panel entering">
+    <!-- Screen 1: Woman / Man -->
+    <div class="segment-control s1">
+      <div class="seg-btn active" data-gender="woman" onclick="setGender('woman')">
+        <span>Woman</span>
+      </div>
+      <div class="seg-btn" data-gender="man" onclick="setGender('man')">
+        <span>Man</span>
+      </div>
+    </div>
+    <!-- Screen 2: CM / IN -->
+    <div class="segment-control s2">
+      <div class="seg-btn active" data-unit="cm" onclick="setUnit('cm')">
+        <span>CM</span>
+      </div>
+      <div class="seg-btn" data-unit="in" onclick="setUnit('in')">
+        <span>IN</span>
+      </div>
+    </div>
+    <model-viewer class="avatar" id="avatar-img"
+      src="avatar.glb"
+      alt="Avatar"
+      camera-controls
+      auto-rotate
+      auto-rotate-delay="0"
+      rotation-per-second="8deg"
+      shadow-intensity="0.8"
+      exposure="1.1"
+      interaction-prompt="none">
+    </model-viewer>
+  </div>
+
+  <!-- Change background button -->
+  <div class="settings-btn entering" id="bg-menu-btn" onclick="toggleBgMenu(event)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="1 4 1 10 7 10"/>
+      <polyline points="23 20 23 14 17 14"/>
+      <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+    </svg>
+  </div>
+
+  <!-- BG dropdown menu -->
+  <div class="bg-dropdown" id="bg-dropdown">
+    <div class="bg-dd-item" onclick="closeBgMenu(); openUploadModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+      </svg>
+      Upload Background
+    </div>
+    <div class="bg-dd-sep"></div>
+    <div class="bg-dd-item" onclick="closeBgMenu(); openAiModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+      AI Background
+    </div>
+    <div class="bg-dd-sep"></div>
+    <div class="bg-dd-item" onclick="closeBgMenu(); randomBg()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+        <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+      </svg>
+      Random Background
+    </div>
+  </div>
+
+  <!-- Next button (screen 1 only) -->
+  <div class="next-btn s1 entering" onclick="goToScreen(2)">
+    <span>Next</span>
+  </div>
+
+  <!-- Back / Confirm buttons (screen 2 only) -->
+  <div class="back-btn s2 entering" onclick="goToScreen(1)">
+    <span>← Back</span>
+  </div>
+  <div class="confirm-btn s2 entering" onclick="alert('Saved!')">
+    <span>Confirm</span>
+  </div>
+
+  <!-- Left selector -->
+  <div class="selector-panel left entering s1" id="left-selector">
+    <!-- Screen 1: thumbnail scroller -->
+    <div class="s1">
+      <div class="wheel-zone" id="left-wheel"></div>
+      <svg class="arc-svg" style="left:166px;top:106px;width:260px;height:868px;"
+           viewBox="0 0 260 868" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad-left" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="white" stop-opacity="0"/>
+            <stop offset="50%"  stop-color="white" stop-opacity="1"/>
+            <stop offset="100%" stop-color="white" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M259.5,0.5 Q0,0.5 0,300.5 L0,567.5 Q0,867.5 259.5,867.5"
+              fill="none" stroke="url(#grad-left)" stroke-width="1" stroke-dasharray="4 12"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Right selector -->
+  <div class="selector-panel right entering s1" id="right-selector">
+    <!-- Screen 1: thumbnail scroller -->
+    <div class="s1">
+      <div class="wheel-zone" id="right-wheel"></div>
+      <svg class="arc-svg" style="left:0;top:158px;width:229px;height:764px;"
+           viewBox="0 0 229 764" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad-right" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="white" stop-opacity="0"/>
+            <stop offset="50%"  stop-color="white" stop-opacity="1"/>
+            <stop offset="100%" stop-color="white" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,0.5 Q228.5,0.5 228.5,300.5 L228.5,463.5 Q228.5,763.5 0,763.5"
+              fill="none" stroke="url(#grad-right)" stroke-width="1" stroke-dasharray="4 12"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Height arc slider (screen 2, left side) -->
+  <div class="s2" id="height-panel" style="position:absolute;top:0;left:406px;width:426px;height:1080px;">
+    <!-- Value display -->
+    <div class="sl-info sl-info-left">
+      <div class="sl-name">Height</div>
+      <div class="sl-num" id="height-num">170</div>
+      <div class="sl-unit" id="height-unit-lbl">cm</div>
+    </div>
+    <!-- Range labels -->
+    <div class="sl-range" style="left:148px;top:96px;">220</div>
+    <div class="sl-range" style="left:148px;top:880px;">140</div>
+    <!-- Arc slider SVG -->
+    <svg class="arc-slider-svg" id="height-svg"
+         style="left:166px;top:106px;width:260px;height:868px;"
+         viewBox="0 0 260 868" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="height-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="white" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="white" stop-opacity="0.45"/>
+        </linearGradient>
+        <filter id="thumb-glow-h" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Track (dim) -->
+      <path id="height-track"
+            d="M259.5,0.5 Q0,0.5 0,300.5 L0,567.5 Q0,867.5 259.5,867.5"
+            fill="none" stroke="rgba(255,255,255,0.15)"
+            stroke-width="3" stroke-linecap="round"/>
+      <!-- Fill (bright, grows from bottom) -->
+      <path id="height-fill"
+            d="M259.5,0.5 Q0,0.5 0,300.5 L0,567.5 Q0,867.5 259.5,867.5"
+            fill="none" stroke="url(#height-grad)"
+            stroke-width="3" stroke-linecap="round"/>
+      <!-- Thumb -->
+      <circle id="height-thumb" r="11" fill="white"
+              filter="url(#thumb-glow-h)"/>
+    </svg>
+    <!-- Drag zone -->
+    <div class="sl-zone" id="height-zone"></div>
+  </div>
+
+  <!-- Weight arc slider (screen 2, right side) -->
+  <div class="s2" id="weight-panel" style="position:absolute;top:0;left:1088px;width:426px;height:1080px;">
+    <!-- Value display -->
+    <div class="sl-info sl-info-right">
+      <div class="sl-name">Weight</div>
+      <div class="sl-num" id="weight-num">65</div>
+      <div class="sl-unit" id="weight-unit-lbl">kg</div>
+    </div>
+    <!-- Range labels -->
+    <div class="sl-range" style="right:148px;top:148px;">150</div>
+    <div class="sl-range" style="right:148px;top:836px;">40</div>
+    <!-- Arc slider SVG -->
+    <svg class="arc-slider-svg" id="weight-svg"
+         style="left:0;top:158px;width:229px;height:764px;"
+         viewBox="0 0 229 764" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="weight-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="white" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="white" stop-opacity="0.45"/>
+        </linearGradient>
+        <filter id="thumb-glow-w" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Track (dim) -->
+      <path id="weight-track"
+            d="M0,0.5 Q228.5,0.5 228.5,300.5 L228.5,463.5 Q228.5,763.5 0,763.5"
+            fill="none" stroke="rgba(255,255,255,0.15)"
+            stroke-width="3" stroke-linecap="round"/>
+      <!-- Fill (bright, grows from bottom) -->
+      <path id="weight-fill"
+            d="M0,0.5 Q228.5,0.5 228.5,300.5 L228.5,463.5 Q228.5,763.5 0,763.5"
+            fill="none" stroke="url(#weight-grad)"
+            stroke-width="3" stroke-linecap="round"/>
+      <!-- Thumb -->
+      <circle id="weight-thumb" r="11" fill="white"
+              filter="url(#thumb-glow-w)"/>
+    </svg>
+    <!-- Drag zone -->
+    <div class="sl-zone" id="weight-zone"></div>
+  </div>
+</div>
+
+<!-- ── Upload Background Modal ─────────────────────────────────── -->
+<div class="modal-overlay" id="upload-modal" onclick="handleOverlayClick(event,'upload-modal')">
+  <div class="modal-box">
+    <div class="modal-title">
+      Upload Background
+      <div class="modal-close" onclick="closeModal('upload-modal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    </div>
+
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+      <p><strong>Click to browse</strong> or drag & drop an image here<br>
+      Supports JPG, PNG, WEBP · Recommended 1920×1080 or wider</p>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFileSelect(event)">
+    <img id="upload-preview" alt="Preview">
+
+    <div class="modal-btn" id="upload-apply-btn" style="display:none; margin-top:18px;" onclick="applyUploadedBg()">
+      Apply as Background
+    </div>
+    <div class="modal-btn secondary" onclick="closeModal('upload-modal')">Cancel</div>
+  </div>
+</div>
+
+<!-- ── AI Background Modal ────────────────────────────────────── -->
+<div class="modal-overlay" id="ai-modal" onclick="handleOverlayClick(event,'ai-modal')">
+  <div class="modal-box">
+    <div class="modal-title">
+      AI Background
+      <div class="modal-close" onclick="closeModal('ai-modal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    </div>
+
+    <!-- Prompt -->
+    <div class="modal-section">
+      <div class="modal-label">Describe your background</div>
+      <textarea class="modal-textarea" id="ai-prompt" rows="3" placeholder="e.g. Misty forest at golden hour, soft bokeh, cinematic lighting…"></textarea>
+    </div>
+
+    <!-- Style -->
+    <div class="modal-section">
+      <div class="modal-label">Style</div>
+      <div class="chip-group" id="style-chips">
+        <div class="chip active" data-group="style" onclick="toggleChip(this)">Photorealistic</div>
+        <div class="chip" data-group="style" onclick="toggleChip(this)">Illustration</div>
+        <div class="chip" data-group="style" onclick="toggleChip(this)">Watercolor</div>
+        <div class="chip" data-group="style" onclick="toggleChip(this)">3D Render</div>
+        <div class="chip" data-group="style" onclick="toggleChip(this)">Pixel Art</div>
+      </div>
+    </div>
+
+    <!-- Mood -->
+    <div class="modal-section">
+      <div class="modal-label">Mood &amp; Atmosphere</div>
+      <div class="chip-group" id="mood-chips">
+        <div class="chip active" data-group="mood" onclick="toggleChip(this)">Bright</div>
+        <div class="chip" data-group="mood" onclick="toggleChip(this)">Dark</div>
+        <div class="chip" data-group="mood" onclick="toggleChip(this)">Warm</div>
+        <div class="chip" data-group="mood" onclick="toggleChip(this)">Cool</div>
+        <div class="chip" data-group="mood" onclick="toggleChip(this)">Mysterious</div>
+        <div class="chip" data-group="mood" onclick="toggleChip(this)">Calm</div>
+        <div class="chip" data-group="mood" onclick="toggleChip(this)">Dynamic</div>
+        <div class="chip" data-group="mood" onclick="toggleChip(this)">Dreamy</div>
+      </div>
+    </div>
+
+    <!-- Color tone -->
+    <div class="modal-section">
+      <div class="modal-label">Color Tone</div>
+      <div class="chip-group" id="tone-chips">
+        <div class="chip" data-group="tone" onclick="toggleChip(this)">Warm</div>
+        <div class="chip" data-group="tone" onclick="toggleChip(this)">Cool</div>
+        <div class="chip" data-group="tone" onclick="toggleChip(this)">Neutral</div>
+        <div class="chip active" data-group="tone" onclick="toggleChip(this)">Pastel</div>
+        <div class="chip" data-group="tone" onclick="toggleChip(this)">Vivid</div>
+        <div class="chip" data-group="tone" onclick="toggleChip(this)">Monotone</div>
+      </div>
+    </div>
+
+    <!-- Primary colors -->
+    <div class="modal-section">
+      <div class="modal-label">Primary Colors <span class="color-hint">— pick up to 3</span></div>
+      <div class="color-pickers" id="color-pickers">
+        <div class="color-slot" id="cs-0">
+          <div class="color-slot-bg" id="csb-0" style="background:#c9a0dc;"></div>
+          <input type="color" value="#c9a0dc" oninput="updateColorSlot(0, this.value)">
+        </div>
+        <div class="color-slot" id="cs-1" style="display:none;">
+          <div class="color-slot-bg" id="csb-1" style="background:#a0c4dc;"></div>
+          <input type="color" value="#a0c4dc" oninput="updateColorSlot(1, this.value)">
+        </div>
+        <div class="color-slot" id="cs-2" style="display:none;">
+          <div class="color-slot-bg" id="csb-2" style="background:#dca0a0;"></div>
+          <input type="color" value="#dca0a0" oninput="updateColorSlot(2, this.value)">
+        </div>
+        <div class="color-add" id="color-add-btn" onclick="addColorSlot()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI preview area -->
+    <div id="ai-preview-wrap">
+      <img id="ai-preview-img" src="" alt="">
+      <div id="ai-preview-msg"></div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="modal-btn" id="ai-generate-btn" onclick="generateAiBg()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+      Generate Background
+    </div>
+    <div class="modal-btn secondary" id="ai-apply-btn" style="display:none;" onclick="applyAiBg()">Apply as Background</div>
+    <div class="modal-btn secondary" onclick="closeModal('ai-modal')">Cancel</div>
+  </div>
+</div>
+
+<script>
+// ── Scale app to viewport ──────────────────────────────────────────
+function scaleApp() {
+  const app = document.getElementById('app');
+  const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  const ox = (window.innerWidth  - 1920 * s) / 2;
+  const oy = (window.innerHeight - 1080 * s) / 2;
+  app.style.transform = `translate(${ox}px, ${oy}px) scale(${s})`;
+}
+scaleApp();
+window.addEventListener('resize', scaleApp);
+
+// ── Fix: 초기 entering 클래스 제거 (animation 종료 후 :hover 작동하도록) ──
+document.querySelectorAll('.entering').forEach(el => {
+  el.addEventListener('animationend', () => el.classList.remove('entering'), { once: true });
+});
+
+// ── Background utilities ───────────────────────────────────────────
+let _bgQueue = [], _bgBusy = false, _bgAllFiles = [];
+
+function _shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+const _BG_FILES = [
+  'H&M-Seongsu-Interior_1F-3-c.jpg',
+  'H&M-Seongsu-Interior_1F-6.jpg',
+  'H&M-Seongsu-Interior_2F-1.jpg',
+  'SINITCA_LAVARICE_19.jpg',
+  'Zara-Nanjing_53_2F-Shoes-&-Bags_\u00a9Seth-Powers.jpg',
+  '_ELDEPARTAMENTO_ESTUDIO_F5A0005.jpg',
+  'background.jpg',
+];
+async function _loadBgList() {
+  _bgAllFiles = [..._BG_FILES];
+  _bgQueue = _shuffle([..._bgAllFiles]);
+}
+
+function _crossfade(url) {
+  const cur  = document.getElementById('bg');
+  const next = document.createElement('div');
+  next.style.cssText = `position:fixed;inset:0;z-index:0;background:url('${url}') center/cover no-repeat;opacity:0;transition:opacity 0.75s cubic-bezier(0.23,1,0.32,1);`;
+  cur.after(next);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    next.style.opacity = '1';
+    setTimeout(() => { next.id = 'bg'; cur.remove(); _bgBusy = false; }, 780);
+  }));
+}
+
+// ── Dropdown menu ──────────────────────────────────────────────────
+function toggleBgMenu(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('bg-dropdown');
+  dd.classList.toggle('open');
+}
+function closeBgMenu() {
+  document.getElementById('bg-dropdown').classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#bg-menu-btn') && !e.target.closest('#bg-dropdown')) closeBgMenu();
+});
+
+// ── Random background (option 3) ──────────────────────────────────
+async function randomBg() {
+  if (_bgBusy) return;
+  _bgBusy = true;
+  _bgAllFiles = [..._BG_FILES];
+  if (_bgAllFiles.length === 0) { _bgBusy = false; return; }
+  if (_bgQueue.length === 0) _bgQueue = _shuffle([..._bgAllFiles]);
+  const file = _bgQueue.pop();
+  _crossfade(`backgrounds/${encodeURIComponent(file)}`);
+}
+
+_loadBgList();
+
+// ── Modal helpers ──────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'upload-modal') resetUploadModal();
+}
+function handleOverlayClick(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+
+// ── Upload modal ───────────────────────────────────────────────────
+let _uploadedDataUrl = null;
+
+function openUploadModal() {
+  resetUploadModal();
+  openModal('upload-modal');
+}
+
+function resetUploadModal() {
+  _uploadedDataUrl = null;
+  document.getElementById('upload-preview').style.display = 'none';
+  document.getElementById('upload-apply-btn').style.display = 'none';
+  document.getElementById('file-input').value = '';
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    _uploadedDataUrl = ev.target.result;
+    const img = document.getElementById('upload-preview');
+    img.src = _uploadedDataUrl;
+    img.style.display = 'block';
+    document.getElementById('upload-apply-btn').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyUploadedBg() {
+  if (!_uploadedDataUrl) return;
+  _crossfade(_uploadedDataUrl);
+  closeModal('upload-modal');
+}
+
+// Drag & drop
+(function() {
+  const zone = document.getElementById('upload-zone');
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      _uploadedDataUrl = ev.target.result;
+      const img = document.getElementById('upload-preview');
+      img.src = _uploadedDataUrl; img.style.display = 'block';
+      document.getElementById('upload-apply-btn').style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  });
+})();
+
+// ── AI modal ───────────────────────────────────────────────────────
+let _aiGeneratedUrl = null;
+let _colorSlotCount = 1;
+
+function openAiModal() {
+  _aiGeneratedUrl = null;
+  document.getElementById('ai-preview-wrap').classList.remove('show');
+  document.getElementById('ai-apply-btn').style.display = 'none';
+  const btn = document.getElementById('ai-generate-btn');
+  btn.classList.remove('loading');
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Generate Background`;
+  openModal('ai-modal');
+}
+
+function toggleChip(el) {
+  const group = el.dataset.group;
+  document.querySelectorAll(`.chip[data-group="${group}"]`).forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function updateColorSlot(idx, color) {
+  document.getElementById('csb-' + idx).style.background = color;
+}
+
+function addColorSlot() {
+  if (_colorSlotCount >= 3) return;
+  const slot = document.getElementById('cs-' + _colorSlotCount);
+  if (slot) slot.style.display = 'block';
+  _colorSlotCount++;
+  if (_colorSlotCount >= 3) document.getElementById('color-add-btn').style.display = 'none';
+}
+
+async function generateAiBg() {
+  const prompt   = document.getElementById('ai-prompt').value.trim();
+  const style    = document.querySelector('.chip[data-group="style"].active')?.textContent || 'Photorealistic';
+  const mood     = document.querySelector('.chip[data-group="mood"].active')?.textContent  || 'Bright';
+  const tone     = document.querySelector('.chip[data-group="tone"].active')?.textContent  || 'Pastel';
+  const colors   = [];
+  for (let i = 0; i < _colorSlotCount; i++) {
+    const inp = document.querySelector(`#cs-${i} input[type="color"]`);
+    if (inp) colors.push(inp.value);
+  }
+
+  const btn = document.getElementById('ai-generate-btn');
+  btn.classList.add('loading');
+  btn.innerHTML = `<svg class="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg> Generating…`;
+
+  const wrap = document.getElementById('ai-preview-wrap');
+  const msg  = document.getElementById('ai-preview-msg');
+  const img  = document.getElementById('ai-preview-img');
+  wrap.classList.add('show');
+  img.style.display = 'none';
+  msg.style.display = 'block';
+  msg.textContent   = 'Generating your background…';
+
+  try {
+    // Build a descriptive query from user selections
+    const keywords = [prompt, style, mood, tone, 'background', 'landscape'].filter(Boolean).join(' ');
+    const seed = Math.floor(Math.random() * 1000);
+    // Use picsum.photos as a free placeholder; replace this fetch with a real AI API call
+    const generatedUrl = `https://picsum.photos/seed/${seed}/1920/1080`;
+
+    // Simulate generation delay
+    await new Promise(r => setTimeout(r, 1800));
+
+    _aiGeneratedUrl = generatedUrl;
+    img.src = generatedUrl;
+    img.style.display = 'block';
+    msg.style.display = 'none';
+    document.getElementById('ai-apply-btn').style.display = 'flex';
+  } catch {
+    msg.textContent = 'Generation failed. Please try again.';
+  }
+
+  btn.classList.remove('loading');
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Regenerate`;
+}
+
+function applyAiBg() {
+  if (!_aiGeneratedUrl) return;
+  _crossfade(_aiGeneratedUrl);
+  closeModal('ai-modal');
+}
+
+// ── Entry animation (replayable) ───────────────────────────────────
+const ENTER_TARGETS = {
+  1: ['.center-panel', '#left-selector', '#right-selector', '.settings-btn', '.next-btn'],
+  2: ['.center-panel', '#height-panel', '#weight-panel', '.settings-btn', '.back-btn', '.confirm-btn'],
+};
+function playEntryAnims(screen) {
+  const s = screen ?? parseInt(document.getElementById('app').dataset.screen ?? '1');
+  const targets = ENTER_TARGETS[s] || ENTER_TARGETS[1];
+  const els = targets.map(sel => document.querySelector(sel)).filter(Boolean);
+  els.forEach(el => el.classList.remove('entering'));
+  void document.body.offsetHeight;
+  els.forEach(el => {
+    el.classList.add('entering');
+    el.addEventListener('animationend', () => el.classList.remove('entering'), { once: true });
+  });
+}
+
+// ── Gender toggle ──────────────────────────────────────────────────
+function setGender(g) {
+  document.querySelectorAll('[data-gender]').forEach(b =>
+    b.classList.toggle('active', b.dataset.gender === g));
+  playEntryAnims();
+}
+
+// ── Unit toggle (screen 2) ─────────────────────────────────────────
+let _currentUnit = 'cm';
+function setUnit(u) {
+  _currentUnit = u;
+  document.querySelectorAll('[data-unit]').forEach(b =>
+    b.classList.toggle('active', b.dataset.unit === u));
+  _updateSliderDisplays();
+}
+
+// ── Screen navigation ──────────────────────────────────────────────
+function goToScreen(n) {
+  document.getElementById('app').dataset.screen = n;
+  playEntryAnims(n);
+}
+
+// ── Image URLs ─────────────────────────────────────────────────────
+const LEFT_IMGS = [
+  'Thumbnail%20Button-5.png', 'Thumbnail%20Button-6.png',
+  'Thumbnail%20Button-7.png', 'Thumbnail%20Button-8.png',
+  'Thumbnail%20Button-9.png', 'Thumbnail%20Button02.jpg',
+  'Thumbnail%20Button04.png', 'Thumbnail%20Button07.jpg',
+];
+const RIGHT_IMGS = [
+  'Thumbnail%20Button.png',   'Thumbnail%20Button-1.png',
+  'Thumbnail%20Button-2.png', 'Thumbnail%20Button-3.png',
+  'Thumbnail%20Button-4.png',
+];
+
+// ── Arc position tables ────────────────────────────────────────────
+const LEFT_ARC = [
+  { dx: 193, dy: -470, size: 60, opacity: 0.20 },
+  { dx:  90, dy: -410, size: 60, opacity: 0.40 },
+  { dx:  41, dy: -280, size: 60, opacity: 0.60 },
+  { dx:  30, dy: -150, size: 60, opacity: 0.80 },
+  { dx:   0, dy:    0, size:100, opacity: 0.85 },
+  { dx:  30, dy:  150, size: 60, opacity: 0.80 },
+  { dx:  41, dy:  280, size: 60, opacity: 0.60 },
+  { dx:  90, dy:  410, size: 60, opacity: 0.40 },
+  { dx: 193, dy:  470, size: 60, opacity: 0.20 },
+];
+const RIGHT_ARC = [
+  { dx: -75, dy: -350, size: 43, opacity: 0.40 },
+  { dx: -33, dy: -238, size: 43, opacity: 0.60 },
+  { dx: -23, dy: -125, size: 43, opacity: 0.80 },
+  { dx:   0, dy:    0, size: 69, opacity: 0.85 },
+  { dx: -23, dy:  134, size: 43, opacity: 0.80 },
+  { dx: -33, dy:  246, size: 43, opacity: 0.60 },
+  { dx: -75, dy:  359, size: 43, opacity: 0.40 },
+];
+
+// ── ArcSelector class ──────────────────────────────────────────────
+class ArcSelector {
+  constructor({ container, wheelZone, arc, images, cx, cy }) {
+    this.container = container; this.arc = arc; this.images = images;
+    this.cx = cx; this.cy = cy; this.n = arc.length;
+    this.mid = Math.floor(this.n / 2);
+    this.floatBase = 0; this.velocity = 0; this.rafId = null;
+    this.pool = [];
+    this._buildPool(); this._render();
+    this._setupWheel(wheelZone); this._setupTouch(wheelZone);
+  }
+  _imgSrc(i) {
+    const idx = ((i % this.images.length) + this.images.length) % this.images.length;
+    return this.images[idx];
+  }
+  _arcPos(slot) {
+    const arcIdx = slot + this.mid;
+    if (arcIdx < -0.5 || arcIdx > this.n - 0.5) return null;
+    const i0 = Math.max(0, Math.min(Math.floor(arcIdx), this.n - 1));
+    const i1 = Math.max(0, Math.min(Math.ceil(arcIdx),  this.n - 1));
+    const t = arcIdx - Math.floor(arcIdx), a0 = this.arc[i0], a1 = this.arc[i1];
+    return { dx: a0.dx+(a1.dx-a0.dx)*t, dy: a0.dy+(a1.dy-a0.dy)*t,
+             size: a0.size+(a1.size-a0.size)*t, opacity: a0.opacity+(a1.opacity-a0.opacity)*t };
+  }
+  _buildPool() {
+    for (let i = 0; i < this.n + 2; i++) {
+      const el = document.createElement('div'); el.className = 'thumb-item';
+      const wrap = document.createElement('div'); wrap.className = 'thumb-scale';
+      const img = document.createElement('img'); img.draggable = false;
+      wrap.appendChild(img); el.appendChild(wrap);
+      el.style.transition = 'none'; this.container.appendChild(el); this.pool.push(el);
+      el.addEventListener('click', () => this._springTo(parseInt(el.dataset.absIdx ?? '0')));
+    }
+  }
+  _render() {
+    const start = Math.round(this.floatBase) - this.mid - 1;
+    this.pool.forEach((el, i) => {
+      const absIdx = start + i, slot = absIdx - this.floatBase, pos = this._arcPos(slot);
+      el.dataset.absIdx = absIdx; el.style.transition = 'none';
+      if (!pos) { el.style.opacity = '0'; el.style.pointerEvents = 'none'; return; }
+      el.style.left = (this.cx - pos.size/2 + pos.dx) + 'px';
+      el.style.top  = (this.cy - pos.size/2 + pos.dy) + 'px';
+      el.style.width = pos.size + 'px'; el.style.height = pos.size + 'px';
+      el.style.opacity = pos.opacity; el.style.pointerEvents = 'auto';
+      const d = Math.round(Math.abs(slot));
+      el.dataset.dist = Math.min(d, this.mid + 1);
+      el.classList.toggle('selected', d === 0);
+      const src = this._imgSrc(absIdx), img = el.querySelector('img');
+      if (!img.src.endsWith(src)) img.src = src;
+    });
+  }
+  _startRAF() {
+    if (this.rafId) cancelAnimationFrame(this.rafId);
+    const tick = () => {
+      this.floatBase += this.velocity; this.velocity *= 0.92; this._render();
+      if (Math.abs(this.velocity) > 0.003) this.rafId = requestAnimationFrame(tick);
+      else { this.velocity = 0; this._snapToNearest(); }
+    };
+    this.rafId = requestAnimationFrame(tick);
+  }
+  _snapToNearest() { this._springTo(Math.round(this.floatBase)); }
+  _springTo(target) {
+    if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+    const start = this.floatBase, dist = target - start;
+    if (Math.abs(dist) < 0.001) { this.floatBase = target; this._render(); return; }
+    const dur = 550, t0 = performance.now();
+    const tick = now => {
+      const p = Math.min((now - t0) / dur, 1);
+      this.floatBase = start + dist * (1 - Math.pow(1 - p, 4)); this._render();
+      if (p < 1) this.rafId = requestAnimationFrame(tick);
+      else { this.floatBase = target; this._render(); this.rafId = null; }
+    };
+    this.rafId = requestAnimationFrame(tick);
+  }
+  _setupWheel(zone) {
+    zone.addEventListener('wheel', e => {
+      e.preventDefault();
+      const raw = e.deltaMode === 0 ? e.deltaY : e.deltaMode === 1 ? e.deltaY*20 : e.deltaY*400;
+      this.velocity += raw * 0.003;
+      this.velocity = Math.sign(this.velocity) * Math.min(Math.abs(this.velocity), 0.8);
+      if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+      this._startRAF();
+    }, { passive: false });
+  }
+  _setupTouch(zone) {
+    let lastY = 0, lastT = 0;
+    zone.addEventListener('touchstart', e => {
+      lastY = e.touches[0].clientY; lastT = performance.now(); this.velocity = 0;
+      if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+    }, { passive: true });
+    zone.addEventListener('touchmove', e => {
+      const y = e.touches[0].clientY, dt = performance.now() - lastT || 1;
+      this.velocity = (lastY - y) / dt * 16 * 0.05;
+      this.floatBase += (lastY - y) * 0.008; lastY = y; lastT = performance.now(); this._render();
+    }, { passive: true });
+    zone.addEventListener('touchend', () => this._startRAF(), { passive: true });
+  }
+}
+
+// ── Init ArcSelectors ──────────────────────────────────────────────
+new ArcSelector({ container: document.getElementById('left-selector'),
+  wheelZone: document.getElementById('left-wheel'), arc: LEFT_ARC, images: LEFT_IMGS, cx: 50, cy: 540 });
+new ArcSelector({ container: document.getElementById('right-selector'),
+  wheelZone: document.getElementById('right-wheel'), arc: RIGHT_ARC, images: RIGHT_IMGS, cx: 318, cy: 531 });
+
+// ── ArcSlider class ────────────────────────────────────────────────
+class ArcSlider {
+  constructor({ trackId, fillId, thumbId, zoneId, numId, min, max, value, toDisplay }) {
+    this.trackEl = document.getElementById(trackId);
+    this.fillEl  = document.getElementById(fillId);
+    this.thumbEl = document.getElementById(thumbId);
+    this.zoneEl  = document.getElementById(zoneId);
+    this.numEl   = document.getElementById(numId);
+    this.min = min; this.max = max;
+    this._val = value;
+    this.toDisplay = toDisplay || (v => v);
+    this._totalLen = 0;
+    this._dragging = false;
+
+    // Wait for SVG to be in DOM before measuring
+    requestAnimationFrame(() => {
+      this._totalLen = this.trackEl.getTotalLength();
+      this._render();
+      this._setupDrag();
+    });
+  }
+
+  get value() { return this._val; }
+  set value(v) {
+    this._val = Math.round(Math.max(this.min, Math.min(this.max, v)));
+    this._render();
+  }
+
+  _progress() { return (this._val - this.min) / (this.max - this.min); }
+
+  _render() {
+    if (!this._totalLen) return;
+    // progress=0 → thumb at bottom (min), progress=1 → thumb at top (max)
+    // Path goes top→bottom, so thumb at totalLen * (1 - progress)
+    const p    = this._progress();
+    const pos  = this._totalLen * (1 - p);     // thumb position along path
+    const fillLen = this._totalLen * p;         // fill length from bottom
+
+    // Fill: segment from thumb to bottom (reverse stroke trick)
+    this.fillEl.style.strokeDasharray  = `${fillLen} ${this._totalLen}`;
+    this.fillEl.style.strokeDashoffset = -pos;
+
+    // Thumb position
+    const pt = this.trackEl.getPointAtLength(pos);
+    this.thumbEl.setAttribute('cx', pt.x);
+    this.thumbEl.setAttribute('cy', pt.y);
+
+    // Label
+    this.numEl.textContent = this.toDisplay(this._val);
+  }
+
+  // Find closest progress value [0,1] for a given SVG-space point
+  _progressAtPoint(x, y) {
+    const N = 300;
+    let best = { t: 0, d: Infinity };
+    for (let i = 0; i <= N; i++) {
+      const t  = i / N;
+      const pt = this.trackEl.getPointAtLength(t * this._totalLen);
+      const d  = Math.hypot(pt.x - x, pt.y - y);
+      if (d < best.d) best = { t, d };
+    }
+    return best.t;
+  }
+
+  _clientToSVG(clientX, clientY) {
+    const svg  = this.trackEl.ownerSVGElement;
+    const rect = svg.getBoundingClientRect();
+    const vb   = svg.viewBox.baseVal;
+    return {
+      x: (clientX - rect.left) / rect.width  * vb.width,
+      y: (clientY - rect.top)  / rect.height * vb.height,
+    };
+  }
+
+  _applyClient(clientX, clientY) {
+    const pt = this._clientToSVG(clientX, clientY);
+    const t  = this._progressAtPoint(pt.x, pt.y);
+    // t=0 → top of arc → max; t=1 → bottom → min
+    this.value = Math.round(this.min + (1 - t) * (this.max - this.min));
+  }
+
+  _setupDrag() {
+    const zone = this.zoneEl;
+
+    const onMove = e => {
+      if (!this._dragging) return;
+      const touch = e.touches ? e.touches[0] : e;
+      this._applyClient(touch.clientX, touch.clientY);
+      e.preventDefault();
+    };
+    const onUp = () => { this._dragging = false; };
+
+    zone.addEventListener('mousedown', e => {
+      this._dragging = true;
+      this._applyClient(e.clientX, e.clientY);
+    });
+    zone.addEventListener('touchstart', e => {
+      this._dragging = true;
+      this._applyClient(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+
+    window.addEventListener('mousemove',  onMove);
+    window.addEventListener('touchmove',  onMove, { passive: false });
+    window.addEventListener('mouseup',    onUp);
+    window.addEventListener('touchend',   onUp);
+  }
+}
+
+// ── Init ArcSliders ────────────────────────────────────────────────
+const heightSlider = new ArcSlider({
+  trackId: 'height-track', fillId: 'height-fill',
+  thumbId: 'height-thumb', zoneId:  'height-zone',
+  numId:   'height-num',
+  min: 140, max: 220, value: 170,
+  toDisplay: v => v,
+});
+
+const weightSlider = new ArcSlider({
+  trackId: 'weight-track', fillId: 'weight-fill',
+  thumbId: 'weight-thumb', zoneId:  'weight-zone',
+  numId:   'weight-num',
+  min: 40,  max: 150, value: 65,
+  toDisplay: v => v,
+});
+
+// ── Unit conversion display update ─────────────────────────────────
+function _updateSliderDisplays() {
+  const u = _currentUnit;
+  if (u === 'cm') {
+    document.getElementById('height-unit-lbl').textContent = 'cm';
+    document.getElementById('weight-unit-lbl').textContent = 'kg';
+    heightSlider.toDisplay = v => v;
+    weightSlider.toDisplay = v => v;
+    // Range labels
+    document.querySelectorAll('#height-panel .sl-range')[0].textContent = '220';
+    document.querySelectorAll('#height-panel .sl-range')[1].textContent = '140';
+    document.querySelectorAll('#weight-panel .sl-range')[0].textContent = '150';
+    document.querySelectorAll('#weight-panel .sl-range')[1].textContent = '40';
+  } else {
+    document.getElementById('height-unit-lbl').textContent = 'in';
+    document.getElementById('weight-unit-lbl').textContent = 'lb';
+    heightSlider.toDisplay = v => Math.round(v / 2.54);
+    weightSlider.toDisplay = v => Math.round(v * 2.205);
+    document.querySelectorAll('#height-panel .sl-range')[0].textContent = '87';
+    document.querySelectorAll('#height-panel .sl-range')[1].textContent = '55';
+    document.querySelectorAll('#weight-panel .sl-range')[0].textContent = '330';
+    document.querySelectorAll('#weight-panel .sl-range')[1].textContent = '88';
+  }
+  heightSlider._render();
+  weightSlider._render();
+}
+</script>
+</body>
+</html>
