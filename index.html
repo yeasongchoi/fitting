@@ -188,6 +188,57 @@ html, body {
 .thumb-item.off { opacity: 0 !important; pointer-events: none; }
 .wheel-zone { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
 
+/* ── Scroll guide ───────────────────────────────────────────────── */
+@keyframes _scroll-wheel {
+  0%   { transform: translateY(0);   opacity: 0.9; }
+  50%  { transform: translateY(9px); opacity: 0.2; }
+  100% { transform: translateY(0);   opacity: 0.9; }
+}
+@keyframes _scroll-guide-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes _scroll-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+.scroll-guide {
+  position: absolute;
+  display: flex; flex-direction: column; align-items: center; gap: 9px;
+  pointer-events: none;
+  opacity: 0;
+  animation: _scroll-guide-in 0.7s cubic-bezier(0.34,1.42,0.64,1) 1.8s both,
+             _scroll-bounce 2.4s ease-in-out 2.5s infinite;
+  transition: opacity 0.5s ease;
+}
+.scroll-guide.hidden { opacity: 0 !important; animation: none !important; }
+.scroll-mouse {
+  width: 26px; height: 42px;
+  border: 2.5px solid rgba(255,255,255,0.75);
+  border-radius: 13px;
+  display: flex; justify-content: center; align-items: flex-start;
+  padding-top: 7px;
+}
+.scroll-dot {
+  width: 4px; height: 8px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 2px;
+  animation: _scroll-wheel 1.5s cubic-bezier(0.25,0.46,0.45,0.94) 2.5s infinite;
+}
+.scroll-guide-label {
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 500;
+  color: rgba(255,255,255,0.60); letter-spacing: 0.12em;
+  text-transform: uppercase; white-space: nowrap;
+}
+/* Chevron arrows below mouse */
+.scroll-chevrons {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: -2px;
+}
+.scroll-chevrons svg { opacity: 0.5; }
+.scroll-chevrons svg:nth-child(1) { opacity: 0.75; }
+.scroll-chevrons svg:nth-child(2) { opacity: 0.45; }
+.scroll-chevrons svg:nth-child(3) { opacity: 0.20; }
+
 /* ── Screen system ──────────────────────────────────────────────── */
 #app[data-screen="1"] .s2 { display: none !important; }
 #app[data-screen="2"] .s1 { display: none !important; }
@@ -409,6 +460,96 @@ html, body {
   color: rgba(255,255,255,0.55); text-align: center; padding: 20px;
 }
 
+/* ── Body Type Slider (screen 1, right panel) ──────────────────── */
+.bts-wrap { position: relative; width: 100%; height: 100%; }
+.bts-preview {
+  position: absolute;
+  left: 18px; top: 280px; width: 190px; height: 440px;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.bts-preview img {
+  width: 100%; height: 100%; object-fit: contain;
+  filter: drop-shadow(0 0 32px rgba(255,255,255,0.25));
+  transition: opacity 0.28s ease, transform 0.38s cubic-bezier(0.34,1.56,0.64,1);
+  will-change: opacity, transform;
+}
+.bts-img-fade { opacity: 0 !important; transform: scale(0.88) !important; }
+.bts-info {
+  position: absolute;
+  left: 20px; top: 740px;
+  pointer-events: none;
+}
+.bts-info-label {
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 500;
+  letter-spacing: 0.2em; color: rgba(255,255,255,0.5);
+  text-transform: uppercase; margin-bottom: 5px;
+}
+.bts-info-name {
+  font-family: 'Poppins', sans-serif; font-size: 42px; font-weight: 600;
+  color: white; line-height: 1;
+  transition: opacity 0.2s ease;
+}
+/* Slider area: right portion of panel */
+.bts-slider-area {
+  position: absolute;
+  right: 24px; top: 200px; width: 170px; height: 680px;
+}
+.bts-ticks-col {
+  position: absolute;
+  right: 16px; top: 0; width: 140px; height: 100%;
+}
+.bts-tick-item {
+  position: absolute; right: 0;
+  display: flex; align-items: center; gap: 8px;
+  transform: translateY(-50%);
+  cursor: pointer; user-select: none;
+}
+.bts-tick-line {
+  width: 10px; height: 1.5px;
+  background: rgba(255,255,255,0.28);
+  border-radius: 1px; flex-shrink: 0;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+.bts-tick-item.bts-active .bts-tick-line {
+  width: 18px; background: rgba(255,255,255,0.9);
+}
+.bts-tick-lbl {
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 500;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.06em; white-space: nowrap;
+  transition: color 0.25s ease, font-size 0.25s ease, font-weight 0.25s ease;
+}
+.bts-tick-item.bts-active .bts-tick-lbl {
+  color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 600;
+}
+.bts-track-bar {
+  position: absolute;
+  right: 0; top: 0; width: 3px; height: 100%;
+  background: rgba(255,255,255,0.12); border-radius: 2px;
+}
+.bts-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(255,255,255,0.6); border-radius: 2px;
+}
+.bts-thumb {
+  position: absolute;
+  right: -9px;
+  width: 21px; height: 21px; border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.35), 0 0 18px 8px rgba(255,255,255,0.45);
+  cursor: ns-resize; z-index: 2;
+  will-change: top;
+}
+.bts-thumb.bts-dragging {
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.6), 0 0 28px 14px rgba(255,255,255,0.65);
+}
+.bts-drag-zone {
+  position: absolute;
+  inset: -24px; z-index: 5; cursor: ns-resize;
+}
+
 </style>
 </head>
 <body>
@@ -489,6 +630,26 @@ html, body {
     <span>Next</span>
   </div>
 
+  <!-- Scroll guides (screen 1 only) -->
+  <div class="scroll-guide s1" id="scroll-guide-left" style="top:490px; left:316px;">
+    <div class="scroll-mouse"><div class="scroll-dot"></div></div>
+    <div class="scroll-chevrons">
+      <svg width="16" height="8" viewBox="0 0 16 8"><polyline points="2,2 8,6 14,2" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg width="16" height="8" viewBox="0 0 16 8"><polyline points="2,2 8,6 14,2" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg width="16" height="8" viewBox="0 0 16 8"><polyline points="2,2 8,6 14,2" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span class="scroll-guide-label">Scroll</span>
+  </div>
+  <div class="scroll-guide s1" id="scroll-guide-right" style="top:490px; left:1524px;">
+    <div class="scroll-mouse"><div class="scroll-dot"></div></div>
+    <div class="scroll-chevrons">
+      <svg width="16" height="8" viewBox="0 0 16 8"><polyline points="2,2 8,6 14,2" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg width="16" height="8" viewBox="0 0 16 8"><polyline points="2,2 8,6 14,2" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg width="16" height="8" viewBox="0 0 16 8"><polyline points="2,2 8,6 14,2" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <span class="scroll-guide-label">Scroll</span>
+  </div>
+
   <!-- Back / Confirm buttons (screen 2 only) -->
   <div class="back-btn s2 entering" onclick="goToScreen(1)">
     <span>← Back</span>
@@ -502,8 +663,8 @@ html, body {
     <!-- Screen 1: thumbnail scroller -->
     <div class="s1">
       <div class="wheel-zone" id="left-wheel"></div>
-      <svg class="arc-svg" style="left:166px;top:106px;width:260px;height:868px;"
-           viewBox="0 0 260 868" xmlns="http://www.w3.org/2000/svg">
+      <svg class="arc-svg" style="left:166px;top:215px;width:195px;height:651px;"
+           viewBox="0 0 195 651" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="grad-left" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%"   stop-color="white" stop-opacity="0"/>
@@ -511,7 +672,7 @@ html, body {
             <stop offset="100%" stop-color="white" stop-opacity="0"/>
           </linearGradient>
         </defs>
-        <path d="M259.5,0.5 Q0,0.5 0,300.5 L0,567.5 Q0,867.5 259.5,867.5"
+        <path d="M194.5,0.5 Q0,0.5 0,225.5 L0,425.5 Q0,650.5 194.5,650.5"
               fill="none" stroke="url(#grad-left)" stroke-width="1" stroke-dasharray="4 12"/>
       </svg>
     </div>
@@ -519,21 +680,19 @@ html, body {
 
   <!-- Right selector -->
   <div class="selector-panel right entering s1" id="right-selector">
-    <!-- Screen 1: thumbnail scroller -->
-    <div class="s1">
-      <div class="wheel-zone" id="right-wheel"></div>
-      <svg class="arc-svg" style="left:0;top:158px;width:229px;height:764px;"
-           viewBox="0 0 229 764" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="grad-right" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stop-color="white" stop-opacity="0"/>
-            <stop offset="50%"  stop-color="white" stop-opacity="1"/>
-            <stop offset="100%" stop-color="white" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        <path d="M0,0.5 Q228.5,0.5 228.5,300.5 L228.5,463.5 Q228.5,763.5 0,763.5"
-              fill="none" stroke="url(#grad-right)" stroke-width="1" stroke-dasharray="4 12"/>
-      </svg>
+    <!-- Screen 1: body type slider -->
+    <div class="s1 bts-wrap">
+      <div class="bts-preview"><img id="bts-img" src="" alt="Body Type" /></div>
+      <div class="bts-info">
+        <div class="bts-info-label">Body Type</div>
+        <div id="bts-name" class="bts-info-name">M</div>
+      </div>
+      <div class="bts-slider-area" id="bts-slider-area">
+        <div class="bts-ticks-col" id="bts-ticks"></div>
+        <div class="bts-track-bar"><div class="bts-fill" id="bts-fill"></div></div>
+        <div class="bts-thumb" id="bts-thumb"></div>
+        <div class="bts-drag-zone" id="bts-drag-zone"></div>
+      </div>
     </div>
   </div>
 
@@ -546,12 +705,12 @@ html, body {
       <div class="sl-unit" id="height-unit-lbl">cm</div>
     </div>
     <!-- Range labels -->
-    <div class="sl-range" style="left:148px;top:96px;">220</div>
-    <div class="sl-range" style="left:148px;top:880px;">140</div>
+    <div class="sl-range" style="left:148px;top:205px;">220</div>
+    <div class="sl-range" style="left:148px;top:856px;">140</div>
     <!-- Arc slider SVG -->
     <svg class="arc-slider-svg" id="height-svg"
-         style="left:166px;top:106px;width:260px;height:868px;"
-         viewBox="0 0 260 868" xmlns="http://www.w3.org/2000/svg">
+         style="left:166px;top:215px;width:195px;height:651px;"
+         viewBox="0 0 195 651" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="height-grad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stop-color="white" stop-opacity="0.9"/>
@@ -561,20 +720,31 @@ html, body {
           <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
+        <linearGradient id="height-fade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="white" stop-opacity="0"/>
+          <stop offset="10%"  stop-color="white" stop-opacity="1"/>
+          <stop offset="90%"  stop-color="white" stop-opacity="1"/>
+          <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </linearGradient>
+        <mask id="height-fade-mask">
+          <rect x="-20" y="0" width="300" height="651" fill="url(#height-fade)"/>
+        </mask>
       </defs>
-      <!-- Track (dim) -->
-      <path id="height-track"
-            d="M259.5,0.5 Q0,0.5 0,300.5 L0,567.5 Q0,867.5 259.5,867.5"
-            fill="none" stroke="rgba(255,255,255,0.15)"
-            stroke-width="3" stroke-linecap="round"/>
-      <!-- Fill (bright, grows from bottom) -->
-      <path id="height-fill"
-            d="M259.5,0.5 Q0,0.5 0,300.5 L0,567.5 Q0,867.5 259.5,867.5"
-            fill="none" stroke="url(#height-grad)"
-            stroke-width="3" stroke-linecap="round"/>
-      <!-- Thumb -->
-      <circle id="height-thumb" r="11" fill="white"
-              filter="url(#thumb-glow-h)"/>
+      <g mask="url(#height-fade-mask)">
+        <!-- Track (dim) -->
+        <path id="height-track"
+              d="M194.5,0.5 Q0,0.5 0,225.5 L0,425.5 Q0,650.5 194.5,650.5"
+              fill="none" stroke="rgba(255,255,255,0.15)"
+              stroke-width="3" stroke-linecap="round"/>
+        <!-- Fill (bright, grows from bottom) -->
+        <path id="height-fill"
+              d="M194.5,0.5 Q0,0.5 0,225.5 L0,425.5 Q0,650.5 194.5,650.5"
+              fill="none" stroke="url(#height-grad)"
+              stroke-width="3" stroke-linecap="round"/>
+        <!-- Thumb -->
+        <circle id="height-thumb" r="11" fill="white"
+                filter="url(#thumb-glow-h)"/>
+      </g>
     </svg>
     <!-- Drag zone -->
     <div class="sl-zone" id="height-zone"></div>
@@ -589,12 +759,12 @@ html, body {
       <div class="sl-unit" id="weight-unit-lbl">kg</div>
     </div>
     <!-- Range labels -->
-    <div class="sl-range" style="right:148px;top:148px;">150</div>
-    <div class="sl-range" style="right:148px;top:836px;">40</div>
+    <div class="sl-range" style="right:148px;top:253px;">150</div>
+    <div class="sl-range" style="right:148px;top:821px;">40</div>
     <!-- Arc slider SVG -->
     <svg class="arc-slider-svg" id="weight-svg"
-         style="left:0;top:158px;width:229px;height:764px;"
-         viewBox="0 0 229 764" xmlns="http://www.w3.org/2000/svg">
+         style="left:0;top:263px;width:172px;height:573px;"
+         viewBox="0 0 172 573" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="weight-grad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stop-color="white" stop-opacity="0.9"/>
@@ -604,20 +774,31 @@ html, body {
           <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
+        <linearGradient id="weight-fade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="white" stop-opacity="0"/>
+          <stop offset="10%"  stop-color="white" stop-opacity="1"/>
+          <stop offset="90%"  stop-color="white" stop-opacity="1"/>
+          <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </linearGradient>
+        <mask id="weight-fade-mask">
+          <rect x="-20" y="0" width="210" height="573" fill="url(#weight-fade)"/>
+        </mask>
       </defs>
-      <!-- Track (dim) -->
-      <path id="weight-track"
-            d="M0,0.5 Q228.5,0.5 228.5,300.5 L228.5,463.5 Q228.5,763.5 0,763.5"
-            fill="none" stroke="rgba(255,255,255,0.15)"
-            stroke-width="3" stroke-linecap="round"/>
-      <!-- Fill (bright, grows from bottom) -->
-      <path id="weight-fill"
-            d="M0,0.5 Q228.5,0.5 228.5,300.5 L228.5,463.5 Q228.5,763.5 0,763.5"
-            fill="none" stroke="url(#weight-grad)"
-            stroke-width="3" stroke-linecap="round"/>
-      <!-- Thumb -->
-      <circle id="weight-thumb" r="11" fill="white"
-              filter="url(#thumb-glow-w)"/>
+      <g mask="url(#weight-fade-mask)">
+        <!-- Track (dim) -->
+        <path id="weight-track"
+              d="M0,0.5 Q171.5,0.5 171.5,225.5 L171.5,347.5 Q171.5,572.5 0,572.5"
+              fill="none" stroke="rgba(255,255,255,0.15)"
+              stroke-width="3" stroke-linecap="round"/>
+        <!-- Fill (bright, grows from bottom) -->
+        <path id="weight-fill"
+              d="M0,0.5 Q171.5,0.5 171.5,225.5 L171.5,347.5 Q171.5,572.5 0,572.5"
+              fill="none" stroke="url(#weight-grad)"
+              stroke-width="3" stroke-linecap="round"/>
+        <!-- Thumb -->
+        <circle id="weight-thumb" r="11" fill="white"
+                filter="url(#thumb-glow-w)"/>
+      </g>
     </svg>
     <!-- Drag zone -->
     <div class="sl-zone" id="weight-zone"></div>
@@ -778,7 +959,7 @@ function _shuffle(arr) {
 
 async function _loadBgList() {
   try {
-    const res = await fetch('/api/backgrounds');
+    const res = await fetch('backgrounds/index.json');
     _bgAllFiles = await res.json();
     _bgQueue = _shuffle([..._bgAllFiles]);
   } catch { _bgAllFiles = []; _bgQueue = []; }
@@ -813,13 +994,13 @@ async function randomBg() {
   if (_bgBusy) return;
   _bgBusy = true;
   try {
-    const res = await fetch('/api/backgrounds');
+    const res = await fetch('backgrounds/index.json');
     _bgAllFiles = await res.json();
   } catch { _bgBusy = false; return; }
   if (_bgAllFiles.length === 0) { _bgBusy = false; return; }
   if (_bgQueue.length === 0) _bgQueue = _shuffle([..._bgAllFiles]);
   const file = _bgQueue.pop();
-  _crossfade(`/backgrounds/${encodeURIComponent(file)}`);
+  _crossfade(`backgrounds/${encodeURIComponent(file)}`);
 }
 
 _loadBgList();
@@ -991,6 +1172,18 @@ function playEntryAnims(screen) {
   });
 }
 
+// ── Scroll guide hide ──────────────────────────────────────────────
+(function() {
+  const guides = ['scroll-guide-left', 'scroll-guide-right'].map(id => document.getElementById(id));
+  function hideGuides() {
+    guides.forEach(el => { if (el) el.classList.add('hidden'); });
+  }
+  ['left-wheel', 'right-wheel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('wheel', hideGuides, { once: true, passive: true });
+  });
+})();
+
 // ── Gender toggle ──────────────────────────────────────────────────
 const GENDER_MODELS = {
   woman: 'avatar.glb',
@@ -1002,10 +1195,7 @@ function setGender(g) {
   const mv = document.getElementById('avatar-img');
   const newSrc = GENDER_MODELS[g] || 'avatar.glb';
   if (mv.getAttribute('src') !== newSrc) {
-    mv.style.opacity = '0';
-    mv.style.transition = 'opacity 0.3s ease';
     mv.setAttribute('src', newSrc);
-    mv.addEventListener('load', () => { mv.style.opacity = '1'; }, { once: true });
   }
   leftSel.images = g === 'man' ? MAN_LEFT_IMGS : WOMAN_LEFT_IMGS;
   leftSel._render();
@@ -1064,15 +1254,7 @@ const LEFT_ARC = [
   { dx:  90, dy:  410, size: 60, opacity: 0.40 },
   { dx: 193, dy:  470, size: 60, opacity: 0.20 },
 ];
-const RIGHT_ARC = [
-  { dx: -75, dy: -350, size: 43, opacity: 0.40 },
-  { dx: -33, dy: -238, size: 43, opacity: 0.60 },
-  { dx: -23, dy: -125, size: 43, opacity: 0.80 },
-  { dx:   0, dy:    0, size: 69, opacity: 0.85 },
-  { dx: -23, dy:  134, size: 43, opacity: 0.80 },
-  { dx: -33, dy:  246, size: 43, opacity: 0.60 },
-  { dx: -75, dy:  359, size: 43, opacity: 0.40 },
-];
+const BODY_TYPE_NAMES = ['XS', 'S', 'M', 'L', 'XL'];
 
 // ── ArcSelector class ──────────────────────────────────────────────
 class ArcSelector {
@@ -1173,15 +1355,161 @@ class ArcSelector {
   }
 }
 
+// ── BodyTypeSlider ─────────────────────────────────────────────────
+class BodyTypeSlider {
+  constructor({ images, names, defaultIdx = 2 }) {
+    this.images = images;
+    this.names  = names;
+    this.n      = images.length;
+    this.TRACK_H = 680;
+    this._floatIdx  = defaultIdx;
+    this._lastIdx   = -1;
+    this._rafId     = null;
+    this._wheelTimer = null;
+    this._imgTimer  = null;
+
+    this._imgEl    = document.getElementById('bts-img');
+    this._nameEl   = document.getElementById('bts-name');
+    this._fillEl   = document.getElementById('bts-fill');
+    this._thumbEl  = document.getElementById('bts-thumb');
+    this._ticksEl  = document.getElementById('bts-ticks');
+    this._dragZone = document.getElementById('bts-drag-zone');
+    this._areaEl   = document.getElementById('bts-slider-area');
+
+    this._buildTicks();
+    this._render(true);
+    this._setupDrag();
+    this._setupWheel();
+  }
+
+  _buildTicks() {
+    this.names.forEach((name, i) => {
+      const el = document.createElement('div');
+      el.className = 'bts-tick-item';
+      // label left, tick-line right (tick-line connects visually toward track)
+      el.innerHTML = `<span class="bts-tick-lbl">${name}</span><span class="bts-tick-line"></span>`;
+      // index 0 = bottom, index n-1 = top
+      el.style.top = (this.TRACK_H * (1 - i / (this.n - 1))) + 'px';
+      el.addEventListener('click', () => this._snapTo(i));
+      this._ticksEl.appendChild(el);
+    });
+    this._tickEls = Array.from(this._ticksEl.querySelectorAll('.bts-tick-item'));
+  }
+
+  _render(immediate = false) {
+    const p      = Math.max(0, Math.min(1, this._floatIdx / (this.n - 1)));
+    const thumbY = this.TRACK_H * (1 - p); // 0=top(max), TRACK_H=bottom(min)
+
+    // Thumb & fill (no CSS transition during render — we control it)
+    this._thumbEl.style.transition = immediate ? 'none' : 'top 0.38s cubic-bezier(0.34,1.56,0.64,1)';
+    this._fillEl.style.transition  = immediate ? 'none' : 'height 0.38s cubic-bezier(0.34,1.56,0.64,1)';
+    this._thumbEl.style.top  = (thumbY - 10.5) + 'px';
+    this._fillEl.style.height = (this.TRACK_H - thumbY) + 'px';
+
+    // Nearest index
+    const nearIdx = Math.max(0, Math.min(this.n - 1, Math.round(this._floatIdx)));
+    if (nearIdx !== this._lastIdx) {
+      this._lastIdx = nearIdx;
+      this._nameEl.textContent = this.names[nearIdx];
+      if (immediate) {
+        this._imgEl.src = this.images[nearIdx];
+      } else {
+        const img = this._imgEl;
+        img.classList.add('bts-img-fade');
+        clearTimeout(this._imgTimer);
+        this._imgTimer = setTimeout(() => {
+          img.src = this.images[nearIdx];
+          img.classList.remove('bts-img-fade');
+        }, 240);
+      }
+    }
+
+    // Tick highlights
+    this._tickEls.forEach((el, i) => el.classList.toggle('bts-active', i === nearIdx));
+  }
+
+  _snapTo(idx) {
+    const target = Math.max(0, Math.min(this.n - 1, Math.round(idx)));
+    if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
+    const start = this._floatIdx, dist = target - start;
+    if (Math.abs(dist) < 0.01) { this._floatIdx = target; this._render(); return; }
+    const dur = 480, t0 = performance.now();
+    const tick = now => {
+      const p = Math.min((now - t0) / dur, 1);
+      this._floatIdx = start + dist * (1 - Math.pow(1 - p, 4));
+      this._render();
+      if (p < 1) this._rafId = requestAnimationFrame(tick);
+      else { this._floatIdx = target; this._render(); this._rafId = null; }
+    };
+    this._rafId = requestAnimationFrame(tick);
+  }
+
+  _clientYToIdx(clientY) {
+    const rect = this._areaEl.getBoundingClientRect();
+    const relY  = clientY - rect.top;
+    const p     = 1 - Math.max(0, Math.min(this.TRACK_H, relY)) / this.TRACK_H;
+    return p * (this.n - 1);
+  }
+
+  _setupDrag() {
+    const zone = this._dragZone;
+    const onMove = clientY => {
+      if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
+      this._floatIdx = this._clientYToIdx(clientY);
+      this._render();
+    };
+    const onEnd = () => {
+      this._thumbEl.classList.remove('bts-dragging');
+      this._snapTo(Math.round(this._floatIdx));
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+    const onMouseMove = e => onMove(e.clientY);
+    const onMouseUp   = () => onEnd();
+
+    zone.addEventListener('mousedown', e => {
+      this._thumbEl.classList.add('bts-dragging');
+      if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
+      onMove(e.clientY);
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+      e.preventDefault();
+    });
+    zone.addEventListener('touchstart', e => {
+      this._thumbEl.classList.add('bts-dragging');
+      if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
+      onMove(e.touches[0].clientY);
+    }, { passive: true });
+    zone.addEventListener('touchmove', e => {
+      onMove(e.touches[0].clientY);
+    }, { passive: true });
+    zone.addEventListener('touchend', () => {
+      this._thumbEl.classList.remove('bts-dragging');
+      this._snapTo(Math.round(this._floatIdx));
+    }, { passive: true });
+  }
+
+  _setupWheel() {
+    this._dragZone.addEventListener('wheel', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const raw = e.deltaMode === 0 ? e.deltaY : e.deltaMode === 1 ? e.deltaY * 20 : e.deltaY * 400;
+      this._floatIdx = Math.max(0, Math.min(this.n - 1, this._floatIdx + raw * 0.004));
+      this._render();
+      clearTimeout(this._wheelTimer);
+      this._wheelTimer = setTimeout(() => this._snapTo(Math.round(this._floatIdx)), 180);
+    }, { passive: false });
+  }
+}
+
 // ── Init ArcSelectors ──────────────────────────────────────────────
 const leftSel = new ArcSelector({ container: document.getElementById('left-selector'),
   wheelZone: document.getElementById('left-wheel'), arc: LEFT_ARC, images: LEFT_IMGS, cx: 50, cy: 540 });
-new ArcSelector({ container: document.getElementById('right-selector'),
-  wheelZone: document.getElementById('right-wheel'), arc: RIGHT_ARC, images: RIGHT_IMGS, cx: 318, cy: 531 });
+new BodyTypeSlider({ images: RIGHT_IMGS, names: BODY_TYPE_NAMES, defaultIdx: 2 });
 
 // ── ArcSlider class ────────────────────────────────────────────────
 class ArcSlider {
-  constructor({ trackId, fillId, thumbId, zoneId, numId, min, max, value, toDisplay }) {
+  constructor({ trackId, fillId, thumbId, zoneId, numId, min, max, value, toDisplay, tickMinor, tickMajor, tickSide }) {
     this.trackEl = document.getElementById(trackId);
     this.fillEl  = document.getElementById(fillId);
     this.thumbEl = document.getElementById(thumbId);
@@ -1190,15 +1518,53 @@ class ArcSlider {
     this.min = min; this.max = max;
     this._val = value;
     this.toDisplay = toDisplay || (v => v);
+    this.tickMinor = tickMinor || 10;
+    this.tickMajor = tickMajor || 10;
+    this.tickSide  = tickSide !== undefined ? tickSide : 1;
     this._totalLen = 0;
     this._dragging = false;
 
     // Wait for SVG to be in DOM before measuring
     requestAnimationFrame(() => {
       this._totalLen = this.trackEl.getTotalLength();
+      this._drawTicks();
       this._render();
       this._setupDrag();
     });
+  }
+
+  _drawTicks() {
+    if (!this._totalLen) return;
+    const svg = this.trackEl.ownerSVGElement;
+    svg.querySelectorAll('.sl-tick').forEach(e => e.remove());
+    const range = this.max - this.min;
+    const side  = this.tickSide;
+    const δ = 2;
+    for (let v = this.min; v <= this.max; v += this.tickMinor) {
+      const progress = (v - this.min) / range;
+      const pos = this._totalLen * (1 - progress);
+      const pt  = this.trackEl.getPointAtLength(pos);
+      const p1  = this.trackEl.getPointAtLength(Math.max(0, pos - δ));
+      const p2  = this.trackEl.getPointAtLength(Math.min(this._totalLen, pos + δ));
+      const tx  = p2.x - p1.x, ty = p2.y - p1.y;
+      const len = Math.hypot(tx, ty) || 1;
+      // Normal perpendicular to tangent (side controls direction)
+      const nx = side * (ty / len);
+      const ny = side * (-tx / len);
+      const isMajor = (v - this.min) % this.tickMajor === 0;
+      const tickLen = isMajor ? 14 : 7;
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', pt.x);
+      line.setAttribute('y1', pt.y);
+      line.setAttribute('x2', pt.x + nx * tickLen);
+      line.setAttribute('y2', pt.y + ny * tickLen);
+      line.setAttribute('stroke', 'white');
+      line.setAttribute('stroke-width', isMajor ? 1.5 : 1);
+      line.setAttribute('stroke-opacity', isMajor ? 0.5 : 0.22);
+      line.setAttribute('stroke-linecap', 'round');
+      line.classList.add('sl-tick');
+      this.trackEl.parentNode.insertBefore(line, this.trackEl);
+    }
   }
 
   get value() { return this._val; }
@@ -1294,6 +1660,7 @@ const heightSlider = new ArcSlider({
   numId:   'height-num',
   min: 140, max: 220, value: 170,
   toDisplay: v => v,
+  tickMinor: 5, tickMajor: 10, tickSide: 1,
 });
 
 const weightSlider = new ArcSlider({
@@ -1302,6 +1669,7 @@ const weightSlider = new ArcSlider({
   numId:   'weight-num',
   min: 40,  max: 150, value: 65,
   toDisplay: v => v,
+  tickMinor: 5, tickMajor: 10, tickSide: -1,
 });
 
 // ── Unit conversion display update ─────────────────────────────────
